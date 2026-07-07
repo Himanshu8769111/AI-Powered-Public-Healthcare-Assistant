@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
-const API_BASE = `http://${window.location.hostname}:5000/api`;
+const API_BASE = import.meta.env.VITE_API_URL ?? `${window.location.origin}/api`;
 
 const AuthInput = ({ label, icon: Icon, ...props }) => (
   <div className="flex flex-col gap-2">
