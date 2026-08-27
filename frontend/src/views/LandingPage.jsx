@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring, useMotionValue, useTransform } from 'framer-motion';
 import {
   Activity, MapPin, Zap, ChevronDown,
@@ -11,12 +11,9 @@ import {
 import VibeInputBox from '../components/VibeInputBox';
 import StickyFeatureNav from '../components/StickyFeatureNav';
 import Marquee from '../components/Marquee';
-import MagneticCursor from '../components/MagneticCursor';
-import PillExplosion from '../components/PillExplosion';
 import Parallax from '../components/Parallax';
 import Preloader from '../components/Preloader';
 import Magnetic from '../components/Magnetic';
-import ExplodedAssembly from '../components/ExplodedAssembly';
 import pillImg from '../assets/pill.png';
 
 // Shared scroll-reveal variants
@@ -112,7 +109,27 @@ const RevealText = ({ text, delayOffset = 0 }) => {
 
 export default function LandingPage({ theme, toggleTheme }) {
   const [isLoading, setIsLoading] = useState(true);
-  const features = ['ai-symptoms', 'hospital-locator', 'global-impact', 'security', 'sos-protocol', 'team'];
+  const navigate = useNavigate();
+
+  // Auth state
+  const [userToken, setUserToken] = useState(localStorage.getItem('auth_token') || '');
+  const userName = localStorage.getItem('user_name') || '';
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_photo');
+    setUserToken('');
+  };
+
+  const features = [
+    { id: 'ai-symptoms',       label: 'AI Diagnostics' },
+    { id: 'hospital-locator',  label: 'Hospital Locator' },
+    { id: 'global-impact',     label: 'Global Impact' },
+    { id: 'security',          label: 'Security' },
+    { id: 'sos-protocol',      label: 'Emergency SOS' },
+    { id: 'team',              label: 'Team' },
+  ];
 
   // 3D Motion Tracking
   const mouseX = useMotionValue(0);
@@ -132,10 +149,11 @@ export default function LandingPage({ theme, toggleTheme }) {
   return (
     <div
       className="bg-warm-light dark:bg-slate-950 min-h-screen selection:bg-accent-gold/30 dark:selection:bg-indigo-500/30 selection:text-brown-900 dark:selection:text-indigo-200 transition-colors duration-500"
-      style={{ cursor: 'none' }}
       onMouseMove={handleMouseMove}
     >
-      <Preloader onComplete={() => setIsLoading(false)} />
+      <AnimatePresence>
+        {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
+      </AnimatePresence>
       <ScrollProgressBar />
       <AnimatePresence>
         {!isLoading && (
@@ -144,7 +162,6 @@ export default function LandingPage({ theme, toggleTheme }) {
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            <MagneticCursor />
             {/* Global Atmospheric Glows */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
               <Parallax yRange={[-100, 100]} xRange={[-50, 50]} className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%]">
@@ -178,22 +195,25 @@ export default function LandingPage({ theme, toggleTheme }) {
 
                 <div className="hidden lg:flex items-center gap-10 ml-12 mr-12 flex-grow justify-center">
                   {[
-                    { label: 'Diagnostic', href: '/symptoms', isRoute: true },
-                    { label: 'Locator', href: '/hospitals', isRoute: true },
+                    { label: 'Diagnostic', href: '#ai-symptoms' },
+                    { label: 'Locator', href: '#hospital-locator' },
                     { label: 'Offline Mode', href: '#global-impact' },
                     { label: 'Security', href: '#security' },
-                    { label: 'Emergency SOS', href: '/sos', isRoute: true },
+                    { label: 'Emergency SOS', href: '#sos-protocol' },
                     { label: 'Team', href: '#team' }
                   ].map((link) => (
-                    link.isRoute ? (
-                      <Link key={link.label} to={link.href} className="text-[10px] font-black text-brown-600 dark:text-slate-400 hover:text-accent-gold dark:hover:text-indigo-200 transition-colors uppercase tracking-[0.3em]">
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <a key={link.label} href={link.href} className="text-[10px] font-black text-brown-600 dark:text-slate-400 hover:text-accent-gold dark:hover:text-indigo-200 transition-colors uppercase tracking-[0.3em]">
-                        {link.label}
-                      </a>
-                    )
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const id = link.href.replace('#', '');
+                        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="text-[10px] font-black text-brown-600 dark:text-slate-400 hover:text-accent-gold dark:hover:text-indigo-200 transition-colors uppercase tracking-[0.3em] cursor-pointer"
+                    >
+                      {link.label}
+                    </a>
                   ))}
                 </div>
 
@@ -205,14 +225,32 @@ export default function LandingPage({ theme, toggleTheme }) {
                   >
                     {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                   </button>
-                  <Magnetic>
-                    <Link
-                      to="/auth"
-                      className="shimmer-btn block bg-brown-900 dark:bg-white text-white dark:text-slate-900 px-10 py-3 rounded-full font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-center flex-shrink-0"
-                    >
-                      Get Started
-                    </Link>
-                  </Magnetic>
+                  {userToken ? (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 bg-accent-gold/10 dark:bg-indigo-500/10 border border-accent-gold/20 dark:border-indigo-500/20 px-4 py-2 rounded-full text-[10px] font-black text-brown-900 dark:text-white uppercase tracking-[0.15em] hover:bg-accent-gold/20 dark:hover:bg-indigo-500/20 transition-all"
+                      >
+                        <User size={14} />
+                        {userName ? userName.split(' ')[0] : 'Dashboard'}
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="text-[10px] font-black text-brown-600 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 uppercase tracking-[0.2em] transition-colors px-2"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    <Magnetic>
+                      <Link
+                        to="/auth"
+                        className="shimmer-btn block bg-brown-900 dark:bg-white text-white dark:text-slate-900 px-10 py-3 rounded-full font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-center flex-shrink-0"
+                      >
+                        Get Started
+                      </Link>
+                    </Magnetic>
+                  )}
                 </div>
               </div>
             </nav>
@@ -287,11 +325,7 @@ export default function LandingPage({ theme, toggleTheme }) {
               </div>
             </section>
 
-            {/* Ecosystem Explosion */}
-            <ExplodedAssembly />
 
-            {/* Pill Explosion Section */}
-            <PillExplosion />
 
             {/* Marquee 1 */}
             <Marquee />

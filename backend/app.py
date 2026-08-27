@@ -29,7 +29,7 @@ from email.mime.multipart import MIMEMultipart
 def send_smtp_email(to_email, subject, text_content):
     """Utility function to send email via SMTP"""
     print("\n" + "="*60, flush=True)
-    print("📤 OUTGOING EMAIL PROTOCOL", flush=True)
+    print("[EMAIL] OUTGOING EMAIL PROTOCOL", flush=True)
     print(f"To:      {to_email}", flush=True)
     print(f"Subject: {subject}", flush=True)
     print(f"Body:\n{text_content}", flush=True)
@@ -89,11 +89,11 @@ if DATABASE_URL:
         with temp_engine.connect() as conn:
             from sqlalchemy import text
             conn.execute(text('SELECT 1'))
-        print("✅ Database connection successful! Using Supabase PostgreSQL.")
+        print("[OK] Database connection successful! Using Supabase PostgreSQL.")
         db_url_to_use = postgres_url
     except Exception as e:
-        print(f"⚠️ Connection to external DATABASE_URL failed: {e}")
-        print("⚠️ Falling back to local SQLite database (healthcare.db) for development.")
+        print(f"[WARN] Connection to external DATABASE_URL failed: {e}")
+        print("[WARN] Falling back to local SQLite database (healthcare.db) for development.")
         is_sqlite = True
 else:
     is_sqlite = True
@@ -118,11 +118,12 @@ jwt = JWTManager(app)
 
 db.init_app(app)
 
-if is_sqlite:
-    with app.app_context():
+with app.app_context():
+    try:
         db.create_all()
-else:
-    print("Using external DATABASE_URL. If tables are missing, run backend/init_supabase_db.py to create them.")
+        print("[OK] Database tables verified / created successfully.")
+    except Exception as e:
+        print(f"[WARN] Error initializing database tables: {e}")
 
 # --- AUTHENTICATION ROUTES ---
 
@@ -133,11 +134,12 @@ def signup():
         if not data or not data.get('email') or not data.get('password') or not data.get('name'):
             return jsonify({"error": "Missing required fields"}), 400
             
-        existing_user = User.query.filter_by(email=data['email']).first()
+        email = data['email'].strip().lower()
+        existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             return jsonify({"error": "Email already exists"}), 400
             
-        new_user = User(name=data['name'], email=data['email'])
+        new_user = User(name=data['name'].strip(), email=email)
         new_user.set_password(data['password'])
         db.session.add(new_user)
         db.session.commit()
@@ -160,7 +162,8 @@ def login():
         if not data or not data.get('email') or not data.get('password'):
             return jsonify({"error": "Missing fields"}), 400
             
-        user = User.query.filter_by(email=data['email']).first()
+        email = data['email'].strip().lower()
+        user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(data['password']):
             return jsonify({"error": "Invalid email or password"}), 401
             
@@ -183,6 +186,7 @@ def forgot_password():
         if not email:
             return jsonify({"error": "Email is required"}), 400
             
+        email = email.strip().lower()
         user = User.query.filter_by(email=email).first()
         if not user:
             return jsonify({"error": "User with this email does not exist"}), 404
@@ -221,6 +225,8 @@ def reset_password():
         if not email or not otp or not new_password:
             return jsonify({"error": "Missing fields"}), 400
             
+        email = email.strip().lower()
+        otp = str(otp).strip()
         user = User.query.filter_by(email=email).first()
         if not user or user.reset_otp != otp:
             return jsonify({"error": "Invalid OTP or email"}), 400
@@ -399,7 +405,8 @@ def handle_profile():
                 "contact_number": user.contact_number,
                 "address": user.address,
                 "profile_photo": user.profile_photo,
-                "emergency_email": user.emergency_email
+                "emergency_email": user.emergency_email,
+                "blood_group": user.blood_group
             })
             
         if request.method == 'PUT':
@@ -421,6 +428,8 @@ def handle_profile():
                 user.profile_photo = data['profile_photo']
             if 'emergency_email' in data:
                 user.emergency_email = data['emergency_email']
+            if 'blood_group' in data:
+                user.blood_group = data['blood_group']
                 
             db.session.commit()
             print(f"DEBUG: Profile updated successfully for user {user_id}")
@@ -433,7 +442,8 @@ def handle_profile():
                     "contact_number": user.contact_number,
                     "address": user.address,
                     "profile_photo": user.profile_photo,
-                    "emergency_email": user.emergency_email
+                    "emergency_email": user.emergency_email,
+                    "blood_group": user.blood_group
                 }
             })
     except Exception as e:

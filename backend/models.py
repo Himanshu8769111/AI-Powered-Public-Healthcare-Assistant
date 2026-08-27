@@ -10,11 +10,12 @@ class User(db.Model):
     password_hash = db.Column(db.String(128))
     reset_otp = db.Column(db.String(6))
     otp_expiry = db.Column(db.DateTime)
-    profile_photo = db.Column(db.String(200))
+    profile_photo = db.Column(db.Text)
     dob = db.Column(db.String(20))
     contact_number = db.Column(db.String(20))
     address = db.Column(db.String(200))
     emergency_email = db.Column(db.String(100))
+    blood_group = db.Column(db.String(10))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

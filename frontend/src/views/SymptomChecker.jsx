@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  Mic, Activity, Send, Info, 
-  AlertCircle, Languages, Brain, 
-  CheckCircle, Stethoscope, RefreshCw,
-  ArrowRight, ShieldCheck
+  Mic, Activity, Languages, Brain, 
+  AlertCircle, Stethoscope, RefreshCw,
+  ArrowRight, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,7 +19,8 @@ const languageOptions = [
 ];
 
 export default function SymptomChecker() {
-    const [text, setText] = useState('');
+    const location = useLocation();
+    const [text, setText] = useState(location.state?.query || '');
     const [isListening, setIsListening] = useState(false);
     const [language, setLanguage] = useState('en-US');
     const [results, setResults] = useState(null);
@@ -55,10 +56,17 @@ export default function SymptomChecker() {
             setResults(res.data);
         } catch (e) {
             console.error(e);
+            setResults({
+                error: "Unable to complete symptom analysis.",
+                details: e.response?.data?.error || e.message || "Please check server connectivity and try again."
+            });
         } finally {
             setLoading(false);
         }
     };
+
+    const symptomsFound = Array.isArray(results?.symptoms_found) ? results.symptoms_found : [];
+    const possibleConditions = Array.isArray(results?.possible_conditions) ? results.possible_conditions : [];
 
     return (
         <div className="max-w-4xl mx-auto flex flex-col gap-10">
@@ -106,7 +114,7 @@ export default function SymptomChecker() {
                         </button>
                     </div>
                     {text && (
-                        <button onClick={() => setText('')} className="text-[10px] font-black text-brown-600 dark:text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors">
+                        <button onClick={() => { setText(''); setResults(null); }} className="text-[10px] font-black text-brown-600 dark:text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors">
                             Purge Buffer
                         </button>
                     )}
@@ -145,84 +153,96 @@ export default function SymptomChecker() {
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-8"
                     >
-                        <div className="flex items-center gap-4 overflow-hidden">
-                             <div className="flex-shrink-0 w-12 h-12 bg-accent-gold/10 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center text-brown-900 dark:text-indigo-500 font-black text-xl">
-                                <Activity size={24} />
-                             </div>
-                             <div className="h-px w-full bg-brown-100 dark:bg-white/5" />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
-                                <h3 className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em] mb-8">Extracted Vitals</h3>
-                                <div className="flex flex-wrap gap-3">
-                                    {results.symptoms_found.map(s => (
-                                        <span key={s} className="px-4 py-2 bg-brown-900/10 dark:bg-indigo-500/10 text-brown-900 dark:text-indigo-400 rounded-xl text-xs font-bold border border-brown-900/20 dark:border-indigo-500/20">
-                                            {s}
-                                        </span>
-                                    ))}
-                                    {results.symptoms_found.length === 0 && <p className="text-brown-600 dark:text-slate-500 text-xs italic">No specific symptoms extracted.</p>}
+                        {results.error ? (
+                            <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-[30px] flex items-center gap-4 text-red-500">
+                                <AlertTriangle size={32} />
+                                <div>
+                                    <h4 className="font-bold text-lg">{results.error}</h4>
+                                    <p className="text-sm opacity-80">{results.details}</p>
                                 </div>
                             </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                     <div className="flex-shrink-0 w-12 h-12 bg-accent-gold/10 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center text-brown-900 dark:text-indigo-500 font-black text-xl">
+                                        <Activity size={24} />
+                                     </div>
+                                     <div className="h-px w-full bg-brown-100 dark:bg-white/5" />
+                                </div>
 
-                            <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
-                                <h3 className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em] mb-8">Diagnostic Probabilities</h3>
-                                <div className="space-y-6">
-                                    {results.possible_conditions.map((c, i) => (
-                                        <div key={i} className="group">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm font-bold text-brown-900 dark:text-white uppercase tracking-tight">{c.disease}</span>
-                                                <span className="text-xs font-black text-brown-900 dark:text-indigo-500">{c.confidence}%</span>
-                                            </div>
-                                            <div className="h-2 bg-brown-100 dark:bg-white/5 rounded-full overflow-hidden">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${c.confidence}%` }}
-                                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                                    className="h-full bg-brown-900 dark:bg-indigo-500"
-                                                />
-                                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
+                                        <h3 className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em] mb-8">Extracted Vitals</h3>
+                                        <div className="flex flex-wrap gap-3">
+                                            {symptomsFound.map(s => (
+                                                <span key={s} className="px-4 py-2 bg-brown-900/10 dark:bg-indigo-500/10 text-brown-900 dark:text-indigo-400 rounded-xl text-xs font-bold border border-brown-900/20 dark:border-indigo-500/20">
+                                                    {s}
+                                                </span>
+                                            ))}
+                                            {symptomsFound.length === 0 && <p className="text-brown-600 dark:text-slate-500 text-xs italic">No specific symptoms extracted.</p>}
                                         </div>
-                                    ))}
-                                    {results.possible_conditions.length === 0 && <p className="text-brown-600 dark:text-slate-500 text-xs italic">Confidence threshold not met.</p>}
+                                    </div>
+
+                                    <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
+                                        <h3 className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em] mb-8">Diagnostic Probabilities</h3>
+                                        <div className="space-y-6">
+                                            {possibleConditions.map((c, i) => (
+                                                <div key={i} className="group">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="text-sm font-bold text-brown-900 dark:text-white uppercase tracking-tight">{c.disease}</span>
+                                                        <span className="text-xs font-black text-brown-900 dark:text-indigo-500">{c.confidence}%</span>
+                                                    </div>
+                                                    <div className="h-2 bg-brown-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${c.confidence}%` }}
+                                                            transition={{ duration: 1.5, ease: "easeOut" }}
+                                                            className="h-full bg-brown-900 dark:bg-indigo-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {possibleConditions.length === 0 && <p className="text-brown-600 dark:text-slate-500 text-xs italic">Confidence threshold not met.</p>}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
-                            <div className="flex items-center gap-3 mb-6">
-                                <ShieldCheck size={18} className="text-accent-gold dark:text-indigo-400" />
-                                <span className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em]">Survivor Guidance</span>
-                            </div>
-                            <h3 className="text-2xl font-serif text-brown-900 dark:text-white mb-4">How survivors manage this condition</h3>
-                            <p className="text-brown-700 dark:text-slate-300 leading-relaxed text-sm">
-                                {results.survivor_advice || "When specific guidance is unavailable, focus on rest, hydration, monitoring your symptoms, and seeking medical help when needed."}
-                            </p>
-                        </div>
-
-                        {/* Critical Triage Advice */}
-                        <div className="relative p-10 bg-brown-900 dark:bg-white/5 rounded-[50px] border border-brown-900/10 dark:border-white/5 shadow-2xl overflow-hidden group">
-                           <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                              <ShieldCheck size={200} />
-                           </div>
-                           <div className="relative z-10">
-                              <div className="flex items-center gap-3 text-red-500 text-[10px] font-black uppercase tracking-widest mb-6 px-4 py-2 bg-red-500/10 w-fit rounded-full border border-red-500/20">
-                                 <AlertCircle size={16} /> AI Triage Protocol
-                              </div>
-                              <h4 className="text-3xl font-serif text-white mb-6 leading-tight">Neural Intelligence <br/> <span className="text-white/60 dark:text-slate-500">Analysis Summary</span></h4>
-                              <p className="text-white/80 dark:text-slate-400 text-lg leading-relaxed mb-8 max-w-3xl">
-                                {results.advice}
-                              </p>
-                              <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row gap-6">
-                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-white/60 dark:text-slate-500 uppercase tracking-widest">Precautionary Disclosure</p>
-                                    <p className="text-[10px] text-white/70 dark:text-slate-600 max-w-xs font-bold leading-relaxed">
-                                        This analysis is informational. Consult a certified medical professional for definitive diagnosis.
+                                <div className="glass-strong bg-card-beige/50 dark:bg-white/5 p-10 rounded-[40px] border border-brown-100 dark:border-white/5 shadow-xl">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <ShieldCheck size={18} className="text-accent-gold dark:text-indigo-400" />
+                                        <span className="text-[10px] font-black text-accent-gold dark:text-indigo-500 uppercase tracking-[0.4em]">Survivor Guidance</span>
+                                    </div>
+                                    <h3 className="text-2xl font-serif text-brown-900 dark:text-white mb-4">How patients manage this condition</h3>
+                                    <p className="text-brown-700 dark:text-slate-300 leading-relaxed text-sm">
+                                        {results.survivor_advice || "When specific guidance is unavailable, focus on rest, hydration, monitoring your symptoms, and seeking medical help when needed."}
                                     </p>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
+                                </div>
+
+                                {/* Critical Triage Advice */}
+                                <div className="relative p-10 bg-brown-900 dark:bg-white/5 rounded-[50px] border border-brown-900/10 dark:border-white/5 shadow-2xl overflow-hidden group">
+                                   <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                                      <ShieldCheck size={200} />
+                                   </div>
+                                   <div className="relative z-10">
+                                      <div className="flex items-center gap-3 text-red-500 text-[10px] font-black uppercase tracking-widest mb-6 px-4 py-2 bg-red-500/10 w-fit rounded-full border border-red-500/20">
+                                         <AlertCircle size={16} /> AI Triage Protocol
+                                      </div>
+                                      <h4 className="text-3xl font-serif text-white mb-6 leading-tight">Neural Intelligence <br/> <span className="text-white/60 dark:text-slate-500">Analysis Summary</span></h4>
+                                      <p className="text-white/80 dark:text-slate-400 text-lg leading-relaxed mb-8 max-w-3xl">
+                                        {results.advice || results.assessment}
+                                      </p>
+                                      <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row gap-6">
+                                         <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-white/60 dark:text-slate-500 uppercase tracking-widest">Precautionary Disclosure</p>
+                                            <p className="text-[10px] text-white/70 dark:text-slate-600 max-w-xs font-bold leading-relaxed">
+                                                This analysis is informational. Consult a certified medical professional for definitive diagnosis.
+                                            </p>
+                                         </div>
+                                      </div>
+                                   </div>
+                                </div>
+                            </>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
