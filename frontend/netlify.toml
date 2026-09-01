@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npx vite build"
+  command = "npm install && chmod +x node_modules/.bin/* && npm run build"
   publish = "dist"
 
 [[redirects]]
