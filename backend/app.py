@@ -125,6 +125,15 @@ with app.app_context():
     except Exception as e:
         print(f"[WARN] Error initializing database tables: {e}")
 
+@app.route('/', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "online",
+        "message": "AI Healthcare Assistant API Backend is running successfully!",
+        "service": "Flask API"
+    }), 200
+
 # --- AUTHENTICATION ROUTES ---
 
 @app.route('/api/signup', methods=['POST'])
