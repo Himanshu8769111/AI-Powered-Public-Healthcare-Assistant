@@ -8,7 +8,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? `${window.location.origin}/api`;
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_BASE = rawApiUrl 
+  ? (rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl)
+  : `${window.location.origin}/api`;
 
 const languageOptions = [
     { code: 'en-US', name: 'English', flag: '🇺🇸' },

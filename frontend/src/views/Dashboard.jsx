@@ -12,7 +12,10 @@ import {
 } from 'lucide-react';
 import { startAlarmSound, stopAlarmSound, testAlarmSound } from '../utils/alarmSound';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? `${window.location.origin}/api`;
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_BASE = rawApiUrl 
+  ? (rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl)
+  : `${window.location.origin}/api`;
 
 const getAuthHeaders = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
