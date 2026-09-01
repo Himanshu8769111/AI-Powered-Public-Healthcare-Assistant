@@ -1,0 +1,9 @@
+node_modules/
+.env
+dist/
+__pycache__/
+*.pyc
+*.sqlite3
+healthcare.db
+.venv/
+venv/
