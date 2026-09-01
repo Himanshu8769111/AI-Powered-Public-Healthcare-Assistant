@@ -7,3 +7,5 @@ requests
 spacy
 gunicorn
 psycopg2-binary
+google-auth
+
