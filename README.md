@@ -52,7 +52,6 @@ Helps users access basic healthcare-related information through a digital platfo
 The platform is designed to provide a smooth experience across different devices, including:
 
 * 💻 Desktop
-* 📱 Mobile
 * 📲 Tablet
 
 ## ⚡ Fast and Accessible
@@ -65,37 +64,6 @@ Demonstrates how Artificial Intelligence and modern web applications can help im
 
 ---
 
-# 🖼️ Screenshots
-
-Add screenshots of your project inside a `screenshots` folder in your repository.
-
-Suggested structure:
-
-```text
-screenshots/
-├── home.png
-├── healthcare-assistant.png
-├── features.png
-└── mobile-view.png
-```
-
-Then add them to your README:
-
-```markdown
-## 🏠 Home Page
-
-![Home Page](./screenshots/home.png)
-
-## 🤖 AI Healthcare Assistant
-
-![AI Healthcare Assistant](./screenshots/healthcare-assistant.png)
-
-## 📱 Mobile View
-
-![Mobile View](./screenshots/mobile-view.png)
-```
-
----
 
 # 🛠️ Tech Stack
 
@@ -146,13 +114,13 @@ Follow these steps to run the project locally.
 ## 1️⃣ Clone the Repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Himanshu8769111/AI-Powered-Public-Healthcare-Assistant
 ```
 
 ## 2️⃣ Navigate to the Project Folder
 
 ```bash
-cd YOUR_PROJECT_FOLDER
+cd AI-Powered Public Healthcare Assistant
 ```
 
 ## 3️⃣ Install Dependencies
